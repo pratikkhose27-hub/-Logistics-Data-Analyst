@@ -1,0 +1,619 @@
+# ============================================================
+# WEEK 3 — ADVANCED DATA ANALYSIS AND VISUALIZATION
+# Logistics Data Analyst Internship
+# TwoWheel Express — Thane–Mumbai Last-Mile Logistics
+# Prepared by: Pratik Khose
+# ============================================================
+
+# ============================================================
+# 1. IMPORT LIBRARIES
+# ============================================================
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Display settings
+pd.set_option("display.max_columns", None)
+pd.set_option("display.float_format", lambda x: f"{x:.2f}")
+
+# ============================================================
+# 2. LOAD WEEK 2 CLEANED DATASET
+# ============================================================
+
+# Replace the filename if your Week 2 cleaned dataset
+# has a different filename.
+
+df = pd.read_csv("week2_cleaned_logistics.csv")
+
+print("=" * 60)
+print("WEEK 3 — LOGISTICS DATA ANALYSIS")
+print("=" * 60)
+
+# ============================================================
+# 3. BASIC DATA INSPECTION
+# ============================================================
+
+print("\n--- Dataset Shape ---")
+print(df.shape)
+
+print("\n--- First 5 Rows ---")
+print(df.head())
+
+print("\n--- Dataset Information ---")
+print(df.info())
+
+print("\n--- Column Names ---")
+print(df.columns.tolist())
+
+print("\n--- Data Types ---")
+print(df.dtypes)
+
+# ============================================================
+# 4. CHECK MISSING VALUES
+# ============================================================
+
+print("\n--- Missing Values ---")
+print(df.isnull().sum())
+
+# Missing percentage
+missing_percentage = (
+    df.isnull().sum() / len(df) * 100
+).sort_values(ascending=False)
+
+print("\n--- Missing Value Percentage ---")
+print(missing_percentage)
+
+# ============================================================
+# 5. CHECK DUPLICATES
+# ============================================================
+
+print("\n--- Duplicate Rows ---")
+print(df.duplicated().sum())
+
+# ============================================================
+# 6. DESCRIPTIVE STATISTICS
+# ============================================================
+
+print("\n--- Descriptive Statistics ---")
+print(df.describe())
+
+# Numerical columns
+numeric_columns = df.select_dtypes(
+    include=np.number
+).columns
+
+print("\n--- Numerical Columns ---")
+print(numeric_columns.tolist())
+
+# ============================================================
+# 7. CENTRAL TENDENCY
+# ============================================================
+
+print("\n--- Mean ---")
+print(df[numeric_columns].mean())
+
+print("\n--- Median ---")
+print(df[numeric_columns].median())
+
+print("\n--- Mode ---")
+print(df[numeric_columns].mode().iloc[0])
+
+print("\n--- Standard Deviation ---")
+print(df[numeric_columns].std())
+
+# ============================================================
+# 8. LOGISTICS KPI SUMMARY
+# ============================================================
+
+print("\n" + "=" * 60)
+print("LOGISTICS KPI ANALYSIS")
+print("=" * 60)
+
+# Delivery Time
+if "delivery_time_min" in df.columns:
+
+    print("\nAverage Delivery Time:")
+    print(df["delivery_time_min"].mean())
+
+    print("\nMedian Delivery Time:")
+    print(df["delivery_time_min"].median())
+
+    print("\nMaximum Delivery Time:")
+    print(df["delivery_time_min"].max())
+
+# Distance
+if "distance_km" in df.columns:
+
+    print("\nAverage Distance:")
+    print(df["distance_km"].mean())
+
+    print("\nMaximum Distance:")
+    print(df["distance_km"].max())
+
+# Operating Cost
+if "operating_cost" in df.columns:
+
+    print("\nAverage Operating Cost:")
+    print(df["operating_cost"].mean())
+
+    print("\nTotal Operating Cost:")
+    print(df["operating_cost"].sum())
+
+# On-time delivery
+if "on_time_flag" in df.columns:
+
+    on_time_rate = df["on_time_flag"].mean() * 100
+
+    print("\nOn-Time Delivery Rate:")
+    print(f"{on_time_rate:.2f}%")
+
+# ============================================================
+# 9. DELIVERY TIME BY ZONE
+# ============================================================
+
+if "zone" in df.columns and "delivery_time_min" in df.columns:
+
+    zone_delivery = (
+        df.groupby("zone")["delivery_time_min"]
+        .agg(["count", "mean", "median", "std"])
+        .sort_values("mean", ascending=False)
+    )
+
+    print("\n--- Delivery Performance by Zone ---")
+    print(zone_delivery)
+
+# ============================================================
+# 10. DELIVERY TIME BY TRAFFIC LEVEL
+# ============================================================
+
+if "traffic_level" in df.columns:
+
+    traffic_analysis = (
+        df.groupby("traffic_level")["delivery_time_min"]
+        .agg(["count", "mean", "median", "std"])
+        .sort_values("mean", ascending=False)
+    )
+
+    print("\n--- Delivery Time by Traffic Level ---")
+    print(traffic_analysis)
+
+# ============================================================
+# 11. COST ANALYSIS BY VEHICLE TYPE
+# ============================================================
+
+if "vehicle_type" in df.columns and "operating_cost" in df.columns:
+
+    vehicle_cost = (
+        df.groupby("vehicle_type")["operating_cost"]
+        .agg(["count", "mean", "median", "sum"])
+        .sort_values("mean", ascending=False)
+    )
+
+    print("\n--- Operating Cost by Vehicle Type ---")
+    print(vehicle_cost)
+
+# ============================================================
+# 12. SHIPMENT VOLUME BY ZONE
+# ============================================================
+
+if "zone" in df.columns:
+
+    shipment_volume = (
+        df["zone"]
+        .value_counts()
+        .sort_values(ascending=False)
+    )
+
+    print("\n--- Shipment Volume by Zone ---")
+    print(shipment_volume)
+
+# ============================================================
+# 13. VEHICLE PERFORMANCE
+# ============================================================
+
+if "vehicle_type" in df.columns:
+
+    vehicle_summary = df.groupby("vehicle_type").agg(
+        Average_Delivery_Time=("delivery_time_min", "mean"),
+        Average_Distance=("distance_km", "mean"),
+        Number_of_Orders=("vehicle_type", "count")
+    )
+
+    if "operating_cost" in df.columns:
+        vehicle_summary["Average_Operating_Cost"] = (
+            df.groupby("vehicle_type")["operating_cost"]
+            .mean()
+        )
+
+    print("\n--- Vehicle Performance ---")
+    print(vehicle_summary)
+
+# ============================================================
+# 14. CORRELATION ANALYSIS
+# ============================================================
+
+correlation_columns = [
+    "distance_km",
+    "order_weight_kg",
+    "delivery_time_min",
+    "promised_time_min",
+    "operating_cost",
+    "on_time_flag"
+]
+
+available_correlation_columns = [
+    col for col in correlation_columns
+    if col in df.columns
+]
+
+correlation_matrix = df[
+    available_correlation_columns
+].corr()
+
+print("\n--- Correlation Matrix ---")
+print(correlation_matrix)
+
+# ============================================================
+# 15. VISUALIZATION SETTINGS
+# ============================================================
+
+sns.set_theme(style="whitegrid")
+
+# ============================================================
+# 16. VISUAL 1 — DELIVERY TIME DISTRIBUTION
+# ============================================================
+
+plt.figure(figsize=(9, 6))
+
+sns.histplot(
+    data=df,
+    x="delivery_time_min",
+    bins=25,
+    kde=True
+)
+
+plt.title(
+    "Distribution of Delivery Time",
+    fontsize=15
+)
+
+plt.xlabel("Delivery Time (minutes)")
+plt.ylabel("Number of Orders")
+
+plt.tight_layout()
+
+plt.savefig(
+    "01_delivery_time_distribution.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+# ============================================================
+# 17. VISUAL 2 — DISTANCE VS DELIVERY TIME
+# ============================================================
+
+plt.figure(figsize=(9, 6))
+
+sns.scatterplot(
+    data=df,
+    x="distance_km",
+    y="delivery_time_min",
+    hue="vehicle_type",
+    alpha=0.65
+)
+
+plt.title(
+    "Distance vs Delivery Time by Vehicle Type",
+    fontsize=15
+)
+
+plt.xlabel("Distance (km)")
+plt.ylabel("Delivery Time (minutes)")
+
+plt.tight_layout()
+
+plt.savefig(
+    "02_distance_vs_delivery_time.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+# ============================================================
+# 18. VISUAL 3 — DELIVERY TIME BY TRAFFIC LEVEL
+# ============================================================
+
+plt.figure(figsize=(9, 6))
+
+sns.boxplot(
+    data=df,
+    x="traffic_level",
+    y="delivery_time_min"
+)
+
+plt.title(
+    "Delivery Time by Traffic Level",
+    fontsize=15
+)
+
+plt.xlabel("Traffic Level")
+plt.ylabel("Delivery Time (minutes)")
+
+plt.tight_layout()
+
+plt.savefig(
+    "03_delivery_time_traffic.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+# ============================================================
+# 19. VISUAL 4 — CORRELATION HEATMAP
+# ============================================================
+
+plt.figure(figsize=(10, 7))
+
+sns.heatmap(
+    correlation_matrix,
+    annot=True,
+    fmt=".2f",
+    cmap="coolwarm",
+    linewidths=0.5
+)
+
+plt.title(
+    "Correlation Matrix of Logistics Variables",
+    fontsize=15
+)
+
+plt.tight_layout()
+
+plt.savefig(
+    "04_correlation_heatmap.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+# ============================================================
+# 20. VISUAL 5 — OPERATING COST BY VEHICLE TYPE
+# ============================================================
+
+if "vehicle_type" in df.columns:
+
+    plt.figure(figsize=(9, 6))
+
+    cost_data = (
+        df.groupby("vehicle_type")["operating_cost"]
+        .mean()
+        .sort_values(ascending=False)
+    )
+
+    sns.barplot(
+        x=cost_data.index,
+        y=cost_data.values
+    )
+
+    plt.title(
+        "Average Operating Cost by Vehicle Type",
+        fontsize=15
+    )
+
+    plt.xlabel("Vehicle Type")
+    plt.ylabel("Average Operating Cost")
+
+    plt.xticks(rotation=15)
+
+    plt.tight_layout()
+
+    plt.savefig(
+        "05_cost_by_vehicle.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.show()
+
+# ============================================================
+# 21. VISUAL 6 — SHIPMENT VOLUME BY ZONE
+# ============================================================
+
+plt.figure(figsize=(10, 6))
+
+zone_volume = (
+    df["zone"]
+    .value_counts()
+    .sort_values(ascending=True)
+)
+
+sns.barplot(
+    x=zone_volume.values,
+    y=zone_volume.index
+)
+
+plt.title(
+    "Shipment Volume by Zone",
+    fontsize=15
+)
+
+plt.xlabel("Number of Orders")
+plt.ylabel("Zone")
+
+plt.tight_layout()
+
+plt.savefig(
+    "06_shipment_volume_zone.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+# ============================================================
+# 22. ON-TIME DELIVERY ANALYSIS
+# ============================================================
+
+if "on_time_flag" in df.columns:
+
+    on_time_summary = (
+        df["on_time_flag"]
+        .value_counts()
+        .rename(
+            index={
+                0: "Late",
+                1: "On Time"
+            }
+        )
+    )
+
+    print("\n--- On-Time vs Late Deliveries ---")
+    print(on_time_summary)
+
+    plt.figure(figsize=(8, 5))
+
+    sns.barplot(
+        x=on_time_summary.index,
+        y=on_time_summary.values
+    )
+
+    plt.title(
+        "On-Time vs Late Deliveries",
+        fontsize=15
+    )
+
+    plt.xlabel("Delivery Status")
+    plt.ylabel("Number of Orders")
+
+    plt.tight_layout()
+
+    plt.savefig(
+        "07_on_time_delivery.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.show()
+
+# ============================================================
+# 23. ZONE PERFORMANCE
+# ============================================================
+
+if "zone" in df.columns:
+
+    zone_performance = (
+        df.groupby("zone")
+        .agg(
+            Orders=("zone", "count"),
+            Avg_Delivery_Time=(
+                "delivery_time_min",
+                "mean"
+            ),
+            Avg_Distance=(
+                "distance_km",
+                "mean"
+            )
+        )
+        .sort_values(
+            "Avg_Delivery_Time",
+            ascending=False
+        )
+    )
+
+    if "operating_cost" in df.columns:
+
+        zone_performance["Avg_Operating_Cost"] = (
+            df.groupby("zone")["operating_cost"]
+            .mean()
+        )
+
+    print("\n--- Zone Performance ---")
+    print(zone_performance)
+
+# ============================================================
+# 24. IDENTIFY POTENTIAL BOTTLENECKS
+# ============================================================
+
+if "zone" in df.columns:
+
+    high_delay_zones = (
+        df.groupby("zone")["delivery_time_min"]
+        .mean()
+        .sort_values(ascending=False)
+        .head(3)
+    )
+
+    print("\n--- Potential High-Delay Zones ---")
+    print(high_delay_zones)
+
+if "traffic_level" in df.columns:
+
+    high_traffic_delay = (
+        df.groupby("traffic_level")["delivery_time_min"]
+        .mean()
+        .sort_values(ascending=False)
+    )
+
+    print("\n--- Traffic Impact ---")
+    print(high_traffic_delay)
+
+# ============================================================
+# 25. KEY INSIGHTS
+# ============================================================
+
+print("\n" + "=" * 60)
+print("KEY WEEK 3 INSIGHTS")
+print("=" * 60)
+
+print("""
+1. Delivery time distribution helps identify the typical delivery
+   duration and potential long-delay observations.
+
+2. Distance is analyzed against delivery time to understand whether
+   longer trips require more delivery time.
+
+3. Traffic-level analysis helps identify congestion as a possible
+   operational bottleneck.
+
+4. Correlation analysis identifies relationships between numerical
+   logistics variables.
+
+5. Vehicle-level cost analysis helps identify transportation cost
+   differences across the fleet.
+
+6. Shipment volume by zone helps identify high-demand operating
+   locations.
+
+7. Zone-level performance can be used to prioritize operational
+   improvements.
+
+8. These findings provide the analytical foundation for Week 4
+   predictive modelling and optimization.
+""")
+
+# ============================================================
+# 26. SAVE ANALYTICAL TABLES
+# ============================================================
+
+zone_performance.to_csv(
+    "week3_zone_performance.csv"
+)
+
+correlation_matrix.to_csv(
+    "week3_correlation_matrix.csv"
+)
+
+if "vehicle_type" in df.columns and "operating_cost" in df.columns:
+    vehicle_cost.to_csv(
+        "week3_vehicle_cost_analysis.csv"
+    )
+
+print("\nWeek 3 analysis completed successfully.")
+print("All visualizations and analytical tables have been saved.")
